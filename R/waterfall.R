@@ -26,6 +26,8 @@
 #' @param scale_y_to_waterfall (logical, default: \code{TRUE}) Should the default range of the y-axis be from the bottom of the lowest pool to the top of the highest? If \code{FALSE}, which was the only option before version 0.1.2, the range of the plot is more balanced around the y-axis.
 #' @param print_plot (logical) Whether or not the plot should be printed. By default, \code{TRUE}, which means it cannot be assigned.
 #' @param ggplot_object_name (character) A quoted valid object name to which ggplot layers may be added after the function has run. Ignored if \code{print} is \code{FALSE}.
+#' @param coord_flip (logical, default: \code{FALSE}) should the plot be rotated to horizontal. The default, \code{FALSE}, results in vertical bars. 
+#' 
 #' @examples
 #' waterfall(values = round(rnorm(5), 1), labels = letters[1:5], calc_total = TRUE)
 #' waterfall(.data = data.frame(category = letters[1:5],
@@ -57,7 +59,8 @@ waterfall <- function(.data = NULL,
                       theme_text_family = "",
                       scale_y_to_waterfall = TRUE,
                       print_plot = FALSE,
-                      ggplot_object_name = "mywaterfall") {
+                      ggplot_object_name = "mywaterfall", 
+                      coord_flip = FALSE) {
   if (!is.null(.data)) {
     
     if (!is.data.frame(.data)) {
@@ -209,6 +212,19 @@ waterfall <- function(.data = NULL,
   
   # rect_text_labels
   
+  # manage offsets
+  if(coord_flip == TRUE) { # coordinate flip
+    h_min <- -0.2
+    h_max <- 1.2
+    v_min <- 0
+    v_max <- 0
+  } else {                 # not flipped  
+    h_min <- 0
+    h_max <- 0
+    v_min <- -0.2
+    v_max <- 1.2
+  }
+    
   for (i in seq_along(values)){
     if(abs(values[i]) > put_rect_text_outside_when_value_below){
       p <- p + ggplot2::annotate("text",
@@ -231,7 +247,8 @@ waterfall <- function(.data = NULL,
                                                        paste0("\U2212", -1 * values[i]),
                                                        values[i]),
                                                 rect_text_labels[i]),
-                                 vjust = ifelse(values[i] >= 0, -0.2, 1.2),
+                                 hjust = ifelse(values[i] >= 0, h_min, h_max), 
+                                 vjust = ifelse(values[i] >= 0, v_min, v_max), 
                                  size = rect_text_size/(5/14))
     }
   }
@@ -267,6 +284,10 @@ waterfall <- function(.data = NULL,
     }
   } else {
     p <- p + ggplot2::scale_x_discrete(labels = labels)
+  }
+  
+  if( coord_flip == TRUE ){
+    p <- p+ coord_flip() 
   }
   
   if (grepl("front", draw_axis.x)){
